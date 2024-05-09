@@ -2,12 +2,12 @@ const mysql = require('mysql2/promise');
 
 const pool = mysql.createPool({
   // host: "mysql-service",
-  host: "localhost",
+  host: "mysql_db",
   user: "seher",
   password: "password",
   database: "adalovelaceakademi",
-  port: 3310,
-  connectTimeout: 100,
+  port: 3306,
+  connectTimeout: 10000, // increased connection timeout
 });
 
 pool.getConnection()

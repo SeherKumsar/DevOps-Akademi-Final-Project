@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   app:
-    image: final_project:v5
+    image: final_project:v6
     build: .
     container_name: final_project
     volumes:
@@ -35,8 +35,9 @@ services:
     depends_on:
       - mongodb
 
-  mysql:
-    image: mysql:latest
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
     ports:
       - "3310:3306"  # Changed this line
     environment:
@@ -44,8 +45,9 @@ services:
       - MYSQL_DATABASE=adalovelaceakademi
       - MYSQL_USER=seher
       - MYSQL_PASSWORD=password
+    command: --default-authentication-plugin=mysql_native_password
     volumes:
-      - mysql-data:/var/lib/mysql
+      - db_data:/var/lib/mysql
     networks:
       - my_network
 
@@ -60,7 +62,7 @@ services:
 volumes:
   mongo-data:
     driver: local
-  mysql-data:
+  db_data:
     driver: local
 
 networks:

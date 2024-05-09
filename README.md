@@ -16,15 +16,19 @@ git clone
 ```
 2. Navigate to the project directory:
 To run the application, you need to clone this repository and then build the image using docker-compose:
-```cd ```
+`cd `
 
 3. Build and start the Docker containers:
 <!-- ```docker build -t final_project:v1 .``` -->
-```docker-compose up --build -d```
+```
+docker-compose up --build -d
+```
 Your application should now be running and connected to MongoDB, MySQL, and Redis.
 
 To stop the application and remove the containers, use the following command:
-```docker-compose down```
+```
+docker-compose down
+```
 
 # Kubernetes Setup with Minikube
 
