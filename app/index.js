@@ -42,32 +42,47 @@ app.use(session({
 }));
 
 
-// GET request for serving login form
+// ENDPOINT
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/home.html");
 });
 app.get("/login", (req, res) => {
   res.sendFile(__dirname + "/views/login.html");
 });
+app.get("/order", (req, res) => {
+  res.sendFile(__dirname + "/views/order.html");
+});
 
 // POST request for handling login
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
-  if (username === "seher_kumsar" && password === "password") {
-    // Set the username in the session
-    req.session.username = username;
+  try {
+    // MySQL veritabanından kullanıcı bilgilerini alın
+    const [userRows] = await dbConnection.execute(
+      "SELECT * FROM users WHERE username = ? AND password = ?",
+      [username, password]
+    );
 
-    // Redirect to the profile page
-    res.sendFile(__dirname + "/views/profile.html");
-  } else {
-    res.status(401).send("Invalid username or password");
+    if (userRows.length > 0) {
+      // Kullanıcı bulundu, oturum bilgilerini ayarla
+      req.session.user = userRows[0]; // Kullanıcının tüm bilgilerini oturumda sakla
+
+      // Profil sayfasına yönlendir
+      res.redirect("/profile");
+    } else {
+      // Kullanıcı bulunamadı, hata mesajı gönder
+      res.status(401).send("Invalid username or password");
+    }
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).send("Error during login");
   }
 });
 
 // Oturum kontrolü middleware'i
 const sessionChecker = (req, res, next) => {
-  if (req.session && req.session.username) {
+  if (req.session && req.session.user) {
     // Oturum geçerli ise, bir sonraki middleware veya endpoint'e devam edin
     next();
   } else {
@@ -78,8 +93,13 @@ const sessionChecker = (req, res, next) => {
 
 // `/profile` endpoint'ine oturum kontrolü middleware'ini uygulayın
 app.get("/profile", sessionChecker, (req, res) => {
-  // Oturum geçerli ise, profil bilgilerini gönderin
-  res.json({ username: req.session.username });
+  // If the session is valid, send the profile page
+  res.sendFile(__dirname + "/views/profile.html");
+});
+
+app.get("/user", sessionChecker, (req, res) => {
+  // If the session is valid, send the user data
+  res.json({ username: req.session.user.username });
 });
 
 app.get("/logout", (req, res) => {
@@ -92,23 +112,36 @@ app.get("/logout", (req, res) => {
     res.redirect("/?logout=success");
   })
 });
+
 // POST request for creating a new order
-app.post("/orders", async (req, res) => {
-  const { user_id, product_id, quantity } = req.body;
+app.post("/orders", sessionChecker, async (req, res) => {
+  const { product_id, quantity } = req.body;
+  
+  // Check if user is logged in
+  if (!req.session.user || !req.session.user.id) {
+    return res.status(401).json({ message: "User not logged in" });
+  }
+
+  const user_id = req.session.user.id; // Get user_id from session
+
+  // Check if product_id, quantity, or user_id is undefined
+  if (product_id === undefined || quantity === undefined || user_id === undefined) {
+    return res.status(400).json({ message: "product_id, quantity, and user_id are required" });
+  }
 
   try {
-    // MySQL veritabanına yeni bir sipariş ekleyin
+    // Insert the new order into the MySQL database
     const result = await dbConnection.execute(
       "INSERT INTO orders (user_id, product_id, quantity) VALUES (?, ?, ?)",
       [user_id, product_id, quantity]
     );
 
-    // Sipariş başarıyla kaydedildiğinde, RabbitMQ üzerinden işlem kuyruğuna gönderin
+    // When the order is successfully saved, send it to the processing queue via RabbitMQ
     await rabbitmqConnection.sendOrderMessage({
       user_id,
       product_id,
       quantity,
-      order_id: result.insertId // Yeni siparişin ID'sini de gönderin
+      order_id: result.insertId // Also send the ID of the new order
     });
 
     res.status(201).json({ message: "Order created successfully", order_id: result.insertId });

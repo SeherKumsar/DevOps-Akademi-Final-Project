@@ -1,29 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profile</title>
-    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-    $(function(){
-      $("#navbar").load("navbar.html"); 
-      // Make an AJAX request to the /profile endpoint
-      $.get("/profile", function(data) {
-        // Update the HTML with the username
-        $("#username").text(data.username);
-        // If the user is logged in, hide the login link and show the logout link
-        if (data.username) {
+      $(function () {
+        $("#navbar").load("navbar.html");
+        // Make an AJAX request to the /profile endpoint
+        $.get("/user", function (data) {
+          // Update the HTML with the username
+          $("#username").text(data.username);
+          // If the user is logged in, hide the login link and show the logout link
+          if (data.username) {
             $("#dropdown-content a[href='/login']").hide();
             $("#logout").show();
-        }
+          }
+        });
       });
-    });
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="navbar"></div>
     <h2>Welcome <span id="username"></span>!</h2>
-</body>
+    <form action="/orders" method="POST">
+      <button type="submit" id="orderButton">Order</button>
+    </form>
+  </body>
 </html>

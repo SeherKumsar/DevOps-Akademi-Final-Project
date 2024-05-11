@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Order</title>
+    <script>
+        $(function () {
+            $("#navbar").load("navbar.html");
+            $.get("/user", function (data) {
+                $("#user_id").val(data.id);
+            });
+    
+            // Add a submit event handler to the form
+            $("form").on("submit", function(event) {
+                // Check if product_id or quantity is empty
+                if ($("#product_id").val() === "" || $("#quantity").val() === "") {
+                    alert("Product ID and Quantity are required.");
+                    event.preventDefault(); // Prevent form from being submitted
+                }
+            });
+        });
+    </script>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <h1>Order a Product</h1>
+
+    <form action="/orders" method="POST">
+        <input type="hidden" id="user_id" name="user_id"> <!-- Hidden user_id field -->
+        <label for="product_id">Product ID:</label><br>
+        <input type="text" id="product_id" name="product_id"><br>
+        <label for="quantity">Quantity:</label><br>
+        <input type="text" id="quantity" name="quantity"><br>
+        <button type="submit" id="orderButton">Order</button>
+    </form>
+  </body>
+</html>

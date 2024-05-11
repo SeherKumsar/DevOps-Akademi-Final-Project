@@ -28,6 +28,7 @@
     position: absolute;
     background-color: #d3d1bf;
     min-width: 160px;
+    max-width: 100%;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     z-index: 1;
 }
