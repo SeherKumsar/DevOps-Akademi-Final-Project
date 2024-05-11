@@ -1,7 +1,7 @@
 const express = require("express");
 require('dotenv').config();
 
-// const mongodbConnection = require('./helper/mongodb');
+const mongodbConnection = require('./helper/mongodb');
 const dbConnection = require("./helper/mysql");
 const redisConnection = require('./helper/redis');
 const session = require('express-session');
@@ -118,11 +118,11 @@ app.get("/logout", (req, res) => {
 });
 
 app.listen(3002, async () => {
-  // console.log(`Server is running on port 3002`);
-  // try {
-  //   await mongodbConnection.connect();
-  //   await mongodbConnection.createCommentsCollection();
-  // } catch (error) {
-  //   console.error('Error setting up MongoDB:', error);
-  // }
+  console.log(`Server is running on port 3002`);
+  try {
+    await mongodbConnection.connect();
+    await mongodbConnection.createCommentsCollection();
+  } catch (error) {
+    console.error('Error setting up MongoDB:', error);
+  }
 });
