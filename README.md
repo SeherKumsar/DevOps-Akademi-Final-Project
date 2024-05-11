@@ -23,7 +23,7 @@ To run the application, you need to clone this repository and then build the ima
 ```
 docker-compose up --build -d
 ```
-Your application should now be running and connected to MongoDB, MySQL, and Redis.
+Your application should now be running and connected to Rabbitmq, MongoDB, MySQL, and Redis.
 
 To stop the application and remove the containers, use the following command:
 ```

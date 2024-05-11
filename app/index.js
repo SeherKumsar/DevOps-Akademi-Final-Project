@@ -7,8 +7,8 @@ const redisConnection = require('./helper/redis');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const rabbitmqConnection = require('./helper/rabbitmq');
-const app = express();
 
+const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 const RedisStore = require('connect-redis')(session);
@@ -24,43 +24,10 @@ const RedisStore = require('connect-redis')(session);
     console.error('Error with RabbitMQ connection:', error);
   }
 })();
-// app.get("/products/:id/comment", async (req, res) => {
-//   const { id } = req.params;
-//   console.log("Received request for product ID:", id); // Debug log
-//   try {
-//     // MySQL'den ilgili postu al
-//     const [postRows] = await dbConnection.execute(
-//       "SELECT * FROM products WHERE id = ?",
-//       [id]
-//     );
-    
-//     // Eğer ürün bulunamazsa hata gönder
-//     if (postRows.length === 0) {
-//       return res.status(404).json({ message: "Product not found" });
-//     }
-    
-//     // Ürün bulundu, product_id ile MongoDB'den yorumları al
-//     const product = postRows[0];
-//     const productId = product.id; // MySQL'den gelen post id'si
-//     let client = mongodbConnection.getClient();
-//     if (!client || !client.topology.isConnected()) {
-//       client = await mongodbConnection.connect();
-//     }
-//     const db = client.db('commentDB');
-//     const query = { product_id: productId };
-//     console.log("MongoDB Query:", query); // Debug log
-//     const results = await db.collection("comments").find(query).toArray();
-//     console.log("Fetched comments:", results); // Debug log
-//     // Tarihe göre artan düzende sırala
-//     results.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    
-//     res.json({ product, comments: results });
-//   } catch (err) {
-//     console.error('Error fetching post and comments:', err);
-//     res.status(400).json({ message: 'Error fetching post and comments', error: err.toString() });
-//   }
-// });
 
+app.get("/", (req, res) => {
+  res.send("Hello from the server side!");
+});
 // Use Redis for session storage
 app.use(session({
   store: new RedisStore({ 
@@ -76,35 +43,42 @@ app.use(session({
     },
 }));
 
-app.get("/", (req, res) => {
-  res.send("Hello from the server side!");
+
+// GET request for serving login form
+app.get("/login", (req, res) => {
+  res.sendFile(__dirname + "/login.html");
 });
 
-app.get("/profile", (req, res) => {
-  const session = req.session;
-  console.log(session);
-  if (session.username) {
-    res.send(`Welcome ${session.username}!`);
-    return;
-  }
-  res.sendStatus(401);
-  // res.send("Profile Details");
-});
-
+// POST request for handling login
 app.post("/login", (req, res) => {
-  // res.send("Login Page");
-  const session = req.session;
   const { username, password } = req.body;
-  // database control
-  // mysql connection => user? password?
 
-  if (username == 'seher_kumsar' && password == 'password') {
-    session.username = username;
-    session.password = password;
-    res.send("Login Successful");
-    return;
+  if (username === "seher_kumsar" && password === "password") {
+    // Set the username in the session
+    req.session.username = username;
+
+    // Redirect to the profile page
+    res.redirect("/profile");
+  } else {
+    res.status(401).send("Invalid username or password");
   }
-  res.send("Login Failed");
+});
+
+// Oturum kontrolü middleware'i
+const sessionChecker = (req, res, next) => {
+  if (req.session && req.session.username) {
+    // Oturum geçerli ise, bir sonraki middleware veya endpoint'e devam edin
+    next();
+  } else {
+    // Oturum geçerli değilse, HTTP 401 hatası döndürün
+    res.sendStatus(401);
+  }
+};
+
+// `/profile` endpoint'ine oturum kontrolü middleware'ini uygulayın
+app.get("/profile", sessionChecker, (req, res) => {
+  // Oturum geçerli ise, profil bilgilerini gönderin
+  res.send(`Welcome ${req.session.username}!`);
 });
 
 app.get("/logout", (req, res) => {
@@ -115,6 +89,69 @@ app.get("/logout", (req, res) => {
     }
     res.send("Logout Successful");
   })
+});
+
+// POST request for creating a new order
+app.post("/orders", async (req, res) => {
+  const { user_id, product_id, quantity } = req.body;
+
+  try {
+    // MySQL veritabanına yeni bir sipariş ekleyin
+    const result = await dbConnection.execute(
+      "INSERT INTO orders (user_id, product_id, quantity) VALUES (?, ?, ?)",
+      [user_id, product_id, quantity]
+    );
+
+    // Sipariş başarıyla kaydedildiğinde, RabbitMQ üzerinden işlem kuyruğuna gönderin
+    await rabbitmqConnection.sendOrderMessage({
+      user_id,
+      product_id,
+      quantity,
+      order_id: result.insertId // Yeni siparişin ID'sini de gönderin
+    });
+
+    res.status(201).json({ message: "Order created successfully", order_id: result.insertId });
+  } catch (error) {
+    console.error("Error creating order:", error);
+    res.status(500).json({ message: "Error creating order", error: error.toString() });
+  }
+});
+
+app.get("/products/:id/comment", async (req, res) => {
+  const { id } = req.params;
+  console.log("Received request for product ID:", id); // Debug log
+  try {
+    // MySQL'den ilgili postu al
+    const [postRows] = await dbConnection.execute(
+      "SELECT * FROM products WHERE id = ?",
+      [id]
+    );
+    
+    // Eğer ürün bulunamazsa hata gönder
+    if (postRows.length === 0) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    
+    // Ürün bulundu, product_id ile MongoDB'den yorumları al
+    const product = postRows[0];
+    const productId = product.id; // MySQL'den gelen post id'si
+    let client = mongodbConnection.getClient();
+    if (!client || !client.topology.isConnected()) {
+      client = await mongodbConnection.connect();
+    }
+    const db = client.db('commentDB');
+    const query = { product_id: productId };
+    console.log("MongoDB Query:", query); // Debug log
+    const results = await db.collection("comments").find(query).toArray();
+    console.log("Fetched comments:", results); // Debug log
+    // Tarihe göre artan düzende sırala
+    results.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    
+    res.json({ product, comments: results });
+  } catch (err) {
+    console.error('Error fetching post and comments:', err);
+    res.status(400).json({ message: 'Error fetching post and comments', error: err.toString() });
+  }
 });
 
 app.listen(3002, async () => {
