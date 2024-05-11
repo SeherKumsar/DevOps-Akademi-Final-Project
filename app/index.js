@@ -9,6 +9,9 @@ const bodyParser = require('body-parser');
 const rabbitmqConnection = require('./helper/rabbitmq');
 
 const app = express();
+app.use(express.static('styles'))
+app.use(express.static(__dirname));
+app.use(express.static(__dirname + '/views'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 const RedisStore = require('connect-redis')(session);
@@ -16,8 +19,6 @@ const RedisStore = require('connect-redis')(session);
 (async () => {
   try {
     const channel = await rabbitmqConnection();
-    // Now you can use the channel to send and receive messages
-    // Don't forget to close the channel and connection when you're done
     await channel.close();
     await channel.connection.close();
   } catch (error) {
@@ -25,9 +26,6 @@ const RedisStore = require('connect-redis')(session);
   }
 })();
 
-app.get("/", (req, res) => {
-  res.send("Hello from the server side!");
-});
 // Use Redis for session storage
 app.use(session({
   store: new RedisStore({ 
@@ -45,8 +43,11 @@ app.use(session({
 
 
 // GET request for serving login form
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/views/home.html");
+});
 app.get("/login", (req, res) => {
-  res.sendFile(__dirname + "/login.html");
+  res.sendFile(__dirname + "/views/login.html");
 });
 
 // POST request for handling login
@@ -58,7 +59,7 @@ app.post("/login", (req, res) => {
     req.session.username = username;
 
     // Redirect to the profile page
-    res.redirect("/profile");
+    res.sendFile(__dirname + "/views/profile.html");
   } else {
     res.status(401).send("Invalid username or password");
   }
@@ -78,7 +79,7 @@ const sessionChecker = (req, res, next) => {
 // `/profile` endpoint'ine oturum kontrolü middleware'ini uygulayın
 app.get("/profile", sessionChecker, (req, res) => {
   // Oturum geçerli ise, profil bilgilerini gönderin
-  res.send(`Welcome ${req.session.username}!`);
+  res.json({ username: req.session.username });
 });
 
 app.get("/logout", (req, res) => {
@@ -87,10 +88,10 @@ app.get("/logout", (req, res) => {
       res.send("Logout Failed");
       return;
     }
-    res.send("Logout Successful");
+    // Redirect to the home page after logout with 'logout=success' query parameter
+    res.redirect("/?logout=success");
   })
 });
-
 // POST request for creating a new order
 app.post("/orders", async (req, res) => {
   const { user_id, product_id, quantity } = req.body;
