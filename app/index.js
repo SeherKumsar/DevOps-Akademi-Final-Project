@@ -52,6 +52,9 @@ app.get("/login", (req, res) => {
 app.get("/order", (req, res) => {
   res.sendFile(__dirname + "/views/order.html");
 });
+app.get("/products", (req, res) => {
+  res.sendFile(__dirname + "/views/product.html");
+});
 
 // POST request for handling login
 app.post("/login", async (req, res) => {
@@ -113,21 +116,27 @@ app.get("/logout", (req, res) => {
   })
 });
 
+// GET request for fetching all products
+app.get("/api/products", async (req, res) => {
+  try {
+    // MySQL veritabanından tüm ürünleri alın
+    const [productRows] = await dbConnection.execute(
+      "SELECT * FROM products"
+    );
+
+    // Ürünleri JSON formatında döndürün
+    res.json(productRows);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).send("Error fetching products");
+  }
+});
+
 // POST request for creating a new order
 app.post("/orders", sessionChecker, async (req, res) => {
   const { product_id, quantity } = req.body;
   
-  // Check if user is logged in
-  if (!req.session.user || !req.session.user.id) {
-    return res.status(401).json({ message: "User not logged in" });
-  }
-
   const user_id = req.session.user.id; // Get user_id from session
-
-  // Check if product_id, quantity, or user_id is undefined
-  if (product_id === undefined || quantity === undefined || user_id === undefined) {
-    return res.status(400).json({ message: "product_id, quantity, and user_id are required" });
-  }
 
   try {
     // Insert the new order into the MySQL database

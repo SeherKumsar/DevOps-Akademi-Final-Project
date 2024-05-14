@@ -9,6 +9,7 @@ CREATE TABLE `users` (
 
 CREATE TABLE `products` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `product_id` INT NOT NULL,
   `name` VARCHAR(255) NOT NULL,
   `description` TEXT,
   `price` DECIMAL(10, 2) NOT NULL,
@@ -38,13 +39,16 @@ INSERT INTO `users` (`username`, `email`, `password`)
 VALUES ('seher_kumsar', 'seherkumsar@adalovelaceakademi.com', 'password');
 
 -- Ürünler tablosuna örnek veri ekle
-INSERT INTO `products` (`name`, `description`, `price`) 
-VALUES ('Akıllı Telefon', 'Yüksek performanslı akıllı telefon', 69.99);
+INSERT INTO `products` (`product_id`, `name`, `description`, `price`) 
+VALUES (1, 'Akıllı Telefon', 'Yüksek performanslı akıllı telefon', 69.99);
+INSERT INTO `products` (`product_id`, `name`, `description`, `price`) 
+VALUES (2, 'Monitör', 'Lcd ekran monitör', 11.99);
 
 -- Ürün detayları tablosuna örnek veri ekle
 INSERT INTO `product_details` (`product_id`, `detail`) 
 VALUES (1, '8 GB RAM, 128 GB depolama alanı');
-
+INSERT INTO `product_details` (`product_id`, `detail`) 
+VALUES (2, '242 Hz, pivot');
 -- Siparişler tablosuna örnek veri ekle
 INSERT INTO `orders` (`user_id`, `product_id`, `quantity`) 
 VALUES (1, 1, 2);

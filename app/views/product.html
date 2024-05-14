@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Products</title>
+    <link rel="stylesheet" href="/styles/styles.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $("#navbar").load("navbar.html");
+        $.get("/api/products", function (data) {
+          var productsHTML = "<ul>";
+          data.forEach(function (product) {
+            productsHTML +=
+              "<li>" +
+              product.name +
+              " - " +
+              product.price +
+              ' <button class="select-product" data-id="' +
+              product.id +
+              '">Select</button></li>';
+          });
+          productsHTML += "</ul>";
+          $("#products").html(productsHTML); // Changed '#product' to '#products'
+
+          // Add click event handler for the select buttons
+          $(".select-product").click(function () {
+            var productId = $(this).data("id");
+            $("#product-id").val(productId);
+          });
+        });
+
+        // Show the order form if the user is logged in
+        $.get("/api/user", function (data) {
+          if (data.username) {
+            $("#order-form").show();
+          }
+        });
+
+        // Handle the form submission
+        $("#create-order-form").submit(function (e) {
+          e.preventDefault();
+          var productId = $("#product-id").val();
+          var quantity = $("#quantity").val();
+          $.post(
+            "/api/orders",
+            { product_id: productId, quantity: quantity },
+            function (data) {
+              alert("Order created successfully!");
+            }
+          ).fail(function () {
+            alert("Failed to create order.");
+          });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <h1>Products</h1>
+    <div id="products"></div>
+
+    <!-- Order form -->
+    <div id="order-form" style="display: none">
+      <h2>Create Order</h2>
+      <form id="create-order-form">
+        <input type="hidden" id="product-id" name="product-id" />
+        <label for="quantity">Quantity:</label><br />
+        <input type="number" id="quantity" name="quantity" /><br />
+        <input type="submit" value="Submit" />
+      </form>
+    </div>
+  </body>
+</html>

@@ -1,8 +1,9 @@
 const amqp = require('amqplib');
 
 async function connectToRabbitMQ() {
+    let connection;
     try {
-        const connection = await amqp.connect('amqp://rabbitmq'); // RabbitMQ container'ının adını kullandık
+        connection = await amqp.connect('amqp://rabbitmq');
         const channel = await connection.createChannel();
 
         console.log('Successfully connected to RabbitMQ');
@@ -11,6 +12,13 @@ async function connectToRabbitMQ() {
         return channel;
     } catch (error) {
         console.error('Error:', error);
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (closeError) {
+                console.error('Error closing connection:', closeError);
+            }
+        }
     }
 }
 

@@ -1,3 +1,14 @@
+# Final Project
+
+## Home Page
+![Home Page](./screenshots/home_page.png)
+
+## Login Page
+![Login Page](./screenshots/login_page.png)
+
+## Profile Page
+![Profile Page](./screenshots/profile_page.png)
+
 # Docker Setup
 
 This project uses Docker to run a Node.js application with MongoDB, MySQL, and Redis.
