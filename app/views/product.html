@@ -5,64 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Products</title>
     <link rel="stylesheet" href="/styles/styles.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script>
       $(document).ready(function () {
-        var selectedProductId; // Add this line
+        var selectedProductId;
     
         $("#navbar").load("navbar.html");
         $.get("/api/products", function (data) {
           var productsHTML = "<ul>";
           data.forEach(function (product) {
+            var productId = product.id; // Use id as productId
             productsHTML +=
               "<li>" +
               product.name +
               " - " +
               product.price +
               ' <button class="select-product" data-id="' +
-              product.id +
+              productId + // Use productId here
               '">Show Comments</button></li>';
           });
           productsHTML += "</ul>";
           $("#products").html(productsHTML);
     
           $(".select-product").click(function () {
-            selectedProductId = $(this).data("id"); // Update the selected product id
+            selectedProductId = $(this).data("id");
             $("#product-id").val(selectedProductId);
-          });
+            $("#product-details").collapse('hide'); // Hide the previous comments
     
-          $("#product-details").click(function () {
             if (!selectedProductId) {
-              return; // If no product is selected, do nothing
+              return;
             }
             $.get("/products/" + selectedProductId + "/comment", function (data) {
-              $("#product-details").html(JSON.stringify(data));
+              var commentsHTML = "<div class='collapse' id='comments-" + selectedProductId + "'>";
+              if (data.comments.length === 0) {
+                commentsHTML += "<p>No comments for this product.</p>";
+              } else {
+                data.comments.forEach(function (comment) {
+                  commentsHTML += "<p>" + comment.comment + "</p>"; // Use comment.comment instead of comment.text
+                });
+              }
+              commentsHTML += "</div>";
+              $("#product-details").html(commentsHTML);
+              $("#comments-" + selectedProductId).collapse('show'); // Show the comments
             });
           });
         });
-
-        // // Show the order form if the user is logged in
-        // $.get("/api/user", function (data) {
-        //   if (data.username) {
-        //     $("#order-form").show();
-        //   }
-        // });
-
-        // // Handle the form submission
-        // $("#create-order-form").submit(function (e) {
-        //   e.preventDefault();
-        //   var productId = $("#product-id").val();
-        //   var quantity = $("#quantity").val();
-        //   $.post(
-        //     "/api/orders",
-        //     { product_id: productId, quantity: quantity },
-        //     function (data) {
-        //       alert("Order created successfully!");
-        //     }
-        //   ).fail(function () {
-        //     alert("Failed to create order.");
-        //   });
-        // });
       });
     </script>
   </head>
@@ -71,17 +60,5 @@
     <h1>Products</h1>
     <div id="products"></div>
     <div id="product-details"></div>
-
-    <!--
-      <div id="order-form" style="display: none">
-        <h2>Create Order</h2>
-        <form action="/orders" method="POST" id="create-order-form">
-          <input type="hidden" id="product-id" name="product-id" />
-          <label for="quantity">Quantity:</label><br />
-          <input type="number" id="quantity" name="quantity" /><br />
-          <button type="submit" id="orderButton">Order</button>
-        </form>
-      </div> 
-    -->
   </body>
 </html>

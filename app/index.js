@@ -1,20 +1,20 @@
 const express = require("express");
-require('dotenv').config();
+require("dotenv").config();
 
-const mongodbConnection = require('./helper/mongodb');
+const mongodbConnection = require("./helper/mongodb");
 const dbConnection = require("./helper/mysql");
-const redisConnection = require('./helper/redis');
-const session = require('express-session');
-const bodyParser = require('body-parser');
-const rabbitmqConnection = require('./helper/rabbitmq');
+const redisConnection = require("./helper/redis");
+const session = require("express-session");
+const bodyParser = require("body-parser");
+const rabbitmqConnection = require("./helper/rabbitmq");
 
 const app = express();
-app.use(express.static('styles'))
+app.use(express.static("styles"));
 app.use(express.static(__dirname));
-app.use(express.static(__dirname + '/views'));
+app.use(express.static(__dirname + "/views"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-const RedisStore = require('connect-redis')(session);
+const RedisStore = require("connect-redis")(session);
 
 (async () => {
   try {
@@ -22,24 +22,26 @@ const RedisStore = require('connect-redis')(session);
     await channel.close();
     await channel.connection.close();
   } catch (error) {
-    console.error('Error with RabbitMQ connection:', error);
+    console.error("Error with RabbitMQ connection:", error);
   }
 })();
 
 // Use Redis for session storage
-app.use(session({
-  store: new RedisStore({ 
-    client: redisConnection.redisClient,
-  }),
-  secret: 'secret$%^123',
-  resave: false,
-  saveUninitialized: false,
-    cookie: { 
+app.use(
+  session({
+    store: new RedisStore({
+      client: redisConnection.redisClient,
+    }),
+    secret: "secret$%^123",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
       secure: false,
       httpOnly: false,
       maxAge: 1000 * 60 * 60 * 24, // 1 hour in milliseconds
     },
-}));
+  })
+);
 
 // Oturum kontrolü middleware'i
 const sessionChecker = (req, res, next) => {
@@ -115,16 +117,14 @@ app.get("/logout", (req, res) => {
     }
     // Redirect to the home page after logout with 'logout=success' query parameter
     res.redirect("/?logout=success");
-  })
+  });
 });
 
 // GET request for fetching all products
 app.get("/api/products", async (req, res) => {
   try {
     // MySQL veritabanından tüm ürünleri alın
-    const [productRows] = await dbConnection.execute(
-      "SELECT * FROM products"
-    );
+    const [productRows] = await dbConnection.execute("SELECT * FROM products");
 
     // Ürünleri JSON formatında döndürün
     res.json(productRows);
@@ -137,7 +137,7 @@ app.get("/api/products", async (req, res) => {
 // POST request for creating a new order
 app.post("/orders", sessionChecker, async (req, res) => {
   const { product_id, quantity } = req.body;
-  
+
   const user_id = req.session.user.id; // Get user_id from session
 
   try {
@@ -152,13 +152,20 @@ app.post("/orders", sessionChecker, async (req, res) => {
       user_id,
       product_id,
       quantity,
-      order_id: result.insertId // Also send the ID of the new order
+      order_id: result.insertId, // Also send the ID of the new order
     });
 
-    res.status(201).json({ message: "Order created successfully", order_id: result.insertId });
+    res
+      .status(201)
+      .json({
+        message: "Order created successfully",
+        order_id: result.insertId,
+      });
   } catch (error) {
     console.error("Error creating order:", error);
-    res.status(500).json({ message: "Error creating order", error: error.toString() });
+    res
+      .status(500)
+      .json({ message: "Error creating order", error: error.toString() });
   }
 });
 
@@ -171,12 +178,12 @@ app.get("/products/:id/comment", async (req, res) => {
       "SELECT * FROM products WHERE id = ?",
       [id]
     );
-    
+
     // Eğer ürün bulunamazsa hata gönder
     if (postRows.length === 0) {
       return res.status(404).json({ message: "Product not found" });
     }
-    
+
     // Ürün bulundu, product_id ile MongoDB'den yorumları al
     const product = postRows[0];
     const productId = product.id; // MySQL'den gelen post id'si
@@ -184,18 +191,23 @@ app.get("/products/:id/comment", async (req, res) => {
     if (!client || !client.topology.isConnected()) {
       client = await mongodbConnection.connect();
     }
-    const db = client.db('commentDB');
-    const query = { product_id: productId };
+    const db = client.db("commentDB");
+    const query = { product_id: productId.toString() }; // Convert productId to string
     console.log("MongoDB Query:", query); // Debug log
     const results = await db.collection("comments").find(query).toArray();
     console.log("Fetched comments:", results); // Debug log
     // Tarihe göre artan düzende sırala
     results.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    
+
     res.json({ product, comments: results });
   } catch (err) {
-    console.error('Error fetching post and comments:', err);
-    res.status(400).json({ message: 'Error fetching post and comments', error: err.toString() });
+    console.error("Error fetching post and comments:", err);
+    res
+      .status(400)
+      .json({
+        message: "Error fetching post and comments",
+        error: err.toString(),
+      });
   }
 });
 
@@ -205,6 +217,6 @@ app.listen(3002, async () => {
     await mongodbConnection.connect();
     await mongodbConnection.createCommentsCollection();
   } catch (error) {
-    console.error('Error setting up MongoDB:', error);
+    console.error("Error setting up MongoDB:", error);
   }
 });
