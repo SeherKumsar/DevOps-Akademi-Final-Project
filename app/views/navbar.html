@@ -1,13 +1,30 @@
 <div class="navbar">
     <a href="/">Home</a>
     <a href="/products">Products</a>
+    <a href="/orders">Orders</a>
+    <a href="/profile">Profile</a>
     <div class="dropdown">
         <button class="dropbtn">Menu
             <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content" id="dropdown-content">
-            <a href="/login">Login</a>
+            <a href="/login" id="login">Login</a>
             <a href="/logout" id="logout" style="display: none;">Logout</a>
         </div>
     </div> 
 </div>
+
+<script>
+  $(function () {
+    // Make an AJAX request to the /profile endpoint
+    $.get("/user", function (data) {
+      // Update the HTML with the username
+      $("#username").text(data.username);
+      // If the user is logged in, hide the login link and show the logout link
+      if (data.username) {
+        $("#dropdown-content a[href='/login']").hide();
+        $("#logout").show();
+      }
+    });
+  });
+</script>

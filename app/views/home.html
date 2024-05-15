@@ -21,6 +21,17 @@
           console.log("Showing alert"); // This will log a message if the alert is supposed to show
           alert("Logout Successful");
         }
+
+        // Add the session check code here
+        $.get("/api/session", function (data) {
+          if (data.loggedIn) {
+            $("#logout").show();
+            $("#login").hide();
+          } else {
+            $("#logout").hide();
+            $("#login").show();
+          }
+        });
       });
     </script>
   </head>

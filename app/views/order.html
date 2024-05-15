@@ -1,7 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Order</title>
+    <link rel="stylesheet" href="/styles/styles.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
         $(function () {
             $("#navbar").load("navbar.html");
@@ -11,11 +15,15 @@
     
             // Add a submit event handler to the form
             $("form").on("submit", function(event) {
-                // Check if product_id or quantity is empty
-                if ($("#product_id").val() === "" || $("#quantity").val() === "") {
-                    alert("Product ID and Quantity are required.");
-                    event.preventDefault(); // Prevent form from being submitted
-                }
+                event.preventDefault(); // Prevent form from being submitted
+
+                var userId = $("#user_id").val();
+                var productId = $("#product_id").val();
+                var quantity = $("#quantity").val();
+
+                $.post("/orders", { user_id: userId, product_id: productId, quantity: quantity }, function(data) {
+                    alert("Order has been submitted.");
+                });
             });
         });
     </script>
@@ -24,12 +32,12 @@
     <div id="navbar"></div>
     <h1>Order a Product</h1>
 
-    <form action="/orders" method="POST">
+    <form>
         <input type="hidden" id="user_id" name="user_id"> <!-- Hidden user_id field -->
         <label for="product_id">Product ID:</label><br>
-        <input type="text" id="product_id" name="product_id"><br>
+        <input type="text" id="product_id" name="product_id" required><br>
         <label for="quantity">Quantity:</label><br>
-        <input type="text" id="quantity" name="quantity"><br>
+        <input type="text" id="quantity" name="quantity" required><br>
         <button type="submit" id="orderButton">Order</button>
     </form>
   </body>

@@ -41,19 +41,28 @@ app.use(session({
     },
 }));
 
+// Oturum kontrolü middleware'i
+const sessionChecker = (req, res, next) => {
+  if (req.session && req.session.user) {
+    // Oturum geçerli ise, bir sonraki middleware veya endpoint'e devam edin
+    next();
+  } else {
+    // Oturum geçerli değilse, HTTP 401 hatası döndürün
+    res.sendStatus(401);
+  }
+};
 
 // ENDPOINT
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/home.html");
 });
-app.get("/login", (req, res) => {
-  res.sendFile(__dirname + "/views/login.html");
-});
-app.get("/order", (req, res) => {
-  res.sendFile(__dirname + "/views/order.html");
-});
+
 app.get("/products", (req, res) => {
   res.sendFile(__dirname + "/views/product.html");
+});
+
+app.get("/login", (req, res) => {
+  res.sendFile(__dirname + "/views/login.html");
 });
 
 // POST request for handling login
@@ -83,17 +92,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Oturum kontrolü middleware'i
-const sessionChecker = (req, res, next) => {
-  if (req.session && req.session.user) {
-    // Oturum geçerli ise, bir sonraki middleware veya endpoint'e devam edin
-    next();
-  } else {
-    // Oturum geçerli değilse, HTTP 401 hatası döndürün
-    res.sendStatus(401);
-  }
-};
-
 // `/profile` endpoint'ine oturum kontrolü middleware'ini uygulayın
 app.get("/profile", sessionChecker, (req, res) => {
   // If the session is valid, send the profile page
@@ -103,6 +101,10 @@ app.get("/profile", sessionChecker, (req, res) => {
 app.get("/user", sessionChecker, (req, res) => {
   // If the session is valid, send the user data
   res.json({ username: req.session.user.username });
+});
+
+app.get("/orders", sessionChecker, (req, res) => {
+  res.sendFile(__dirname + "/views/order.html");
 });
 
 app.get("/logout", (req, res) => {
