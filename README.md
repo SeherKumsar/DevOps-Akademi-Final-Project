@@ -16,7 +16,7 @@
 ![Products Page](./screenshots/product_page.png)
 
 ## Orders Page
-![Orders Page](./screenshots/orders_page.png)
+![Orders Page](./screenshots/order_page.png)
 
 # Docker Setup
 
@@ -32,7 +32,7 @@ The `docker-compose.yaml` file is used to define and manage multiple services us
 1. Clone this repository:
 
 ```
-git clone 
+git clone https://github.com/SeherKumsar/DevOps-Akademi-Final-Project.git
 ```
 2. Navigate to the project directory:
 To run the application, you need to clone this repository and then build the image using docker-compose:
