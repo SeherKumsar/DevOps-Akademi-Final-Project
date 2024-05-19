@@ -1,15 +1,14 @@
 const amqp = require('amqplib');
 
+let channel;
+
 async function connectToRabbitMQ() {
     let connection;
     try {
         connection = await amqp.connect('amqp://rabbitmq');
-        const channel = await connection.createChannel();
+        channel = await connection.createChannel();
 
         console.log('Successfully connected to RabbitMQ');
-
-        // Return the channel to the caller
-        return channel;
     } catch (error) {
         console.error('Error:', error);
         if (connection) {
@@ -22,4 +21,23 @@ async function connectToRabbitMQ() {
     }
 }
 
-module.exports = connectToRabbitMQ;
+async function sendOrderMessage(order) {
+    if (!channel) {
+        console.error('Error: RabbitMQ channel is not initialized');
+        return;
+    }
+
+    const queue = 'orders';
+    await channel.assertQueue(queue, { durable: false });
+
+    // Convert the order object to a string and send it to the queue
+    const message = JSON.stringify(order);
+    channel.sendToQueue(queue, Buffer.from(message));
+
+    console.log(`Sent order message: ${message}`);
+}
+
+module.exports = {
+    connectToRabbitMQ,
+    sendOrderMessage,
+};

@@ -10,6 +10,7 @@
         $(function () {
             $("#navbar").load("navbar.html");
             $.get("/user", function (data) {
+                console.log(data);
                 $("#user_id").val(data.id);
             });
     

@@ -3,11 +3,20 @@
 ## Home Page
 ![Home Page](./screenshots/home_page.png)
 
+## Register Page
+![Register Page](./screenshots/register_page.png)
+
 ## Login Page
 ![Login Page](./screenshots/login_page.png)
 
 ## Profile Page
 ![Profile Page](./screenshots/profile_page.png)
+
+## Products Page
+![Products Page](./screenshots/product_page.png)
+
+## Orders Page
+![Orders Page](./screenshots/orders_page.png)
 
 # Docker Setup
 
@@ -27,7 +36,7 @@ git clone
 ```
 2. Navigate to the project directory:
 To run the application, you need to clone this repository and then build the image using docker-compose:
-`cd `
+`cd app`
 
 3. Build and start the Docker containers:
 <!-- ```docker build -t final_project:v1 .``` -->

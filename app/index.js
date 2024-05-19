@@ -18,9 +18,8 @@ const RedisStore = require("connect-redis")(session);
 
 (async () => {
   try {
-    const channel = await rabbitmqConnection();
-    await channel.close();
-    await channel.connection.close();
+    await rabbitmqConnection.connectToRabbitMQ();
+    console.log('Successfully connected to RabbitMQ');
   } catch (error) {
     console.error("Error with RabbitMQ connection:", error);
   }
@@ -63,8 +62,39 @@ app.get("/products", (req, res) => {
   res.sendFile(__dirname + "/views/product.html");
 });
 
+app.get("/register", (req, res) => {
+  res.sendFile(__dirname + "/views/register.html");
+});
+
 app.get("/login", (req, res) => {
   res.sendFile(__dirname + "/views/login.html");
+});
+
+app.post("/register", async (req, res) => {
+  const { username, password, email } = req.body;
+
+  try {
+    // Insert a new user into the MySQL database
+    const [result] = await dbConnection.execute(
+      "INSERT INTO users (username, password, email) VALUES (?, ?, ?)",
+      [username, password, email]
+    );
+
+    // Log the result of the insert operation
+    console.log("Insert result:", result);
+
+    // Set the session user
+    req.session.user = { id: result.insertId, username, email };
+
+    // Log the session user
+    console.log("Session user:", req.session.user);
+
+    // Redirect the user to the profile page
+    res.redirect("/profile");
+  } catch (error) {
+    console.error("Error during registration:", error);
+    res.status(500).send("Error during registration");
+  }
 });
 
 // POST request for handling login
@@ -138,11 +168,14 @@ app.get("/api/products", async (req, res) => {
 app.post("/orders", sessionChecker, async (req, res) => {
   const { product_id, quantity } = req.body;
 
-  const user_id = req.session.user.id; // Get user_id from session
+  if (!req.session.user) {
+    return res.status(401).send('Not logged in');
+  }
+  const user_id = req.session.user.id; // Corrected line
 
   try {
     // Insert the new order into the MySQL database
-    const result = await dbConnection.execute(
+    const [result] = await dbConnection.execute(
       "INSERT INTO orders (user_id, product_id, quantity) VALUES (?, ?, ?)",
       [user_id, product_id, quantity]
     );
@@ -163,9 +196,13 @@ app.post("/orders", sessionChecker, async (req, res) => {
       });
   } catch (error) {
     console.error("Error creating order:", error);
-    res
-      .status(500)
-      .json({ message: "Error creating order", error: error.toString() });
+    if (error.message.includes("dbConnection.execute")) {
+      res.status(500).json({ message: "Error executing database query", error: error.toString() });
+    } else if (error.message.includes("rabbitmqConnection.sendOrderMessage")) {
+      res.status(500).json({ message: "Error sending message to RabbitMQ", error: error.toString() });
+    } else {
+      res.status(500).json({ message: "Unknown error", error: error.toString() });
+    }
   }
 });
 
