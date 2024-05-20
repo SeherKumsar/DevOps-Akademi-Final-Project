@@ -20,7 +20,7 @@
 
 # Docker Setup
 
-This project uses Docker to run a Node.js application with MongoDB, MySQL, and Redis.
+This project uses Docker to run a Node.js application with RabbitMQ, MongoDB, MySQL, and Redis.
 
 The `docker-compose.yaml` file is used to define and manage multiple services using the Docker Compose command line tool.
 
